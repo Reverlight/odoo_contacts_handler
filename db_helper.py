@@ -1,20 +1,32 @@
-import os
-
 from fastapi import HTTPException
-from sqlalchemy import create_engine
 import os
-import xmlrpc.client
 
 from sqlalchemy import create_engine, Column, Integer, String, MetaData, update, bindparam, Table, insert, delete
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
 
-from cron_job import get_db_session
-from cron_job import contact_table
+from config import SQLITE_DATABASE_URL
+
+metadata_obj = MetaData()
+contact_table = Table(
+    "Contact",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("contact_address_complete", String(16), nullable=True),
+    Column("street", String(60), nullable=True),
+    Column("complete_name", String(60), nullable=True),
+    Column("email", String(60), nullable=True),
+    Column("street2", String(50), nullable=True),
+    Column("city", String(50), nullable=True),
+)
+
+
+def get_db_session(engine):
+    db_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return db_session()
 
 
 def get_db_contacts():
-    engine = create_engine(os.getenv('SQLITE_DATABASE_URL'))
+    engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
     result = db_session.query(contact_table).all()
     db_contracts_dict = {item.id: {
@@ -30,7 +42,7 @@ def get_db_contacts():
 
 
 def get_db_contact(contract_id):
-    engine = create_engine(os.getenv('SQLITE_DATABASE_URL'))
+    engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
     result = db_session.query(contact_table).filter(contact_table.c.id == contract_id).all()
 

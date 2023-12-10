@@ -1,35 +1,19 @@
 import os
 import xmlrpc.client
 
-from sqlalchemy import create_engine, Column, Integer, String, MetaData, update, bindparam, Table, insert, delete
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, update, bindparam, insert, delete
 from dotenv import load_dotenv
 
-load_dotenv()
+from config import ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, ODOO_URL
+from db_helper import contact_table, SQLITE_DATABASE_URL, get_db_session
+
+
 
 # TODO. Add logs. Add typings. Rename functions
 # TODO. Refactor to reuse fields and not repeat them (maybe through __table__.columns)
 
 # Odoo
-ODOO_URL = os.getenv('ODOO_URL')
-ODOO_DB = os.getenv('ODOO_DB')
-ODOO_USERNAME = os.getenv('ODOO_USERNAME')
-ODOO_PASSWORD = os.getenv('ODOO_PASSWORD')
-# SQLITE
-SQLITE_DATABASE_URL = os.getenv('SQLITE_DATABASE_URL')
 
-metadata_obj = MetaData()
-contact_table = Table(
-    "Contact",
-    metadata_obj,
-    Column("id", Integer, primary_key=True),
-    Column("contact_address_complete", String(16), nullable=True),
-    Column("street", String(60), nullable=True),
-    Column("complete_name", String(60), nullable=True),
-    Column("email", String(60), nullable=True),
-    Column("street2", String(50), nullable=True),
-    Column("city", String(50), nullable=True),
-)
 
 
 def db_process_add_modify_delete(
@@ -94,11 +78,6 @@ def get_odoo_contacts():
     } for contact in odoo_contacts}
 
     return odoo_contracts
-
-
-def get_db_session(engine):
-    db_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return db_session()
 
 
 def compare_contacts(odoo_dict, db_dict):
