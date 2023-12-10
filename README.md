@@ -1,5 +1,5 @@
 # odoo_contacts_handler
-Synchronizes contacts from external api Odoo and gives FastAPI endpoints to access the data 
+Synchronizes contacts from external API Odoo with SQLite database and gives FastAPI endpoints to access the data 
 
 
 ## How to install
