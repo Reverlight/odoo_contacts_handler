@@ -1,49 +1,42 @@
-import os
 import xmlrpc.client
 
 from sqlalchemy import create_engine, update, bindparam, insert, delete
-from dotenv import load_dotenv
 
 from config import ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, ODOO_URL
-from db_helper import contact_table, SQLITE_DATABASE_URL, get_db_session
-
+from db_helper import contact_table, SQLITE_DATABASE_URL, get_db_session, get_db_contacts
+from helper import format_dict_to_list
 
 
 # TODO. Add logs. Add typings. Rename functions
 # TODO. Refactor to reuse fields and not repeat them (maybe through __table__.columns)
 
-# Odoo
 
-
-
-def db_process_add_modify_delete(
+def _db_sync_contacts(
     db_session,
     odoo_contacts,
     added=None,
     deleted=None,
     modified=None,
 ):
+    # Synchronizes contracts in database by executing SQL for adding, deleting and modifying rows
     if added:
         stmt = (
             insert(contact_table).
-            values([change_dict(odoo_contacts[item_id]) for item_id in added])
+            values([
+                get_contacts_with_correct_id_key(odoo_contacts[item_id])
+                for item_id in added
+            ])
         )
         db_session.execute(stmt)
 
     if modified:
         params = {key: bindparam(key) for key in contact_table.columns.keys()}
-
-        stmt = update(contact_table).where(contact_table.c.id == bindparam('_id')).values(params).execution_options(
-            synchronize_session=None)
-
-        modified_list = []
-
-        for modified_single in modified.values():
-            modified_list.append(modified_single)
+        stmt = update(contact_table).where(contact_table.c.id == bindparam('_id')).values(params)
+        modified_values = format_dict_to_list(modified)
 
         db_session.execute(
             stmt,
-            modified_list
+            modified_values
         )
 
     if deleted:
@@ -53,19 +46,14 @@ def db_process_add_modify_delete(
         )
         db_session.execute(stmt)
 
-
-def get_db_contacts(db_session):
-    result = db_session.query(contact_table).all()
-    db_contacts_dict = {item.id: {
-        **{key: getattr(item, key) for key in contact_table.columns.keys()},
-        '_id': item.id,
-    } for item in result}
-    return db_contacts_dict
+    db_session.commit()
 
 
 def get_odoo_contacts():
     common = xmlrpc.client.ServerProxy('{}/common'.format(ODOO_URL))
     uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {})
+
+    # TODO TRY EXCEPT ISSUES
 
     # Connect to the Odoo object model
     models = xmlrpc.client.ServerProxy('{}/object'.format(ODOO_URL))
@@ -81,15 +69,20 @@ def get_odoo_contacts():
 
 
 def compare_contacts(odoo_dict, db_dict):
-    added = set(odoo_dict.keys()) - set(db_dict.keys())
-    deleted = set(db_dict.keys()) - set(odoo_dict.keys())
-    modified = {key: odoo_dict[key] for key in set(db_dict.keys()) & set(odoo_dict.keys()) if
-                db_dict[key] != odoo_dict[key]}
+    ids_to_insert = set(odoo_dict.keys()) - set(db_dict.keys())
+    ids_to_delete = set(db_dict.keys()) - set(odoo_dict.keys())
+    contacts_to_modify = {
+        key: odoo_dict[key]
+        for key in set(db_dict.keys()) & set(odoo_dict.keys())
+        if db_dict[key] != odoo_dict[key]
+    }
+    return ids_to_insert, ids_to_delete, contacts_to_modify
 
-    return added, deleted, modified
 
-
-def change_dict(dict_):
+def get_contacts_with_correct_id_key(dict_):
+    # _id is used inertly in sqlalchemy
+    # but in some cases we would need exactly id
+    # For example in case of insert into database using id from Odoo
     new_dict = dict_.copy()
     new_dict['id'] = new_dict.pop('_id')
     return new_dict
@@ -102,15 +95,14 @@ def sync_database_with_odoo_api():
     odoo_contacts = get_odoo_contacts()
     db_session = get_db_session(engine)
     db_contacts = get_db_contacts(db_session)
-    added, deleted, modified = compare_contacts(odoo_contacts, db_contacts)
-    db_process_add_modify_delete(
+    ids_to_insert, ids_to_delete, contacts_to_modify = compare_contacts(odoo_contacts, db_contacts)
+    _db_sync_contacts(
         db_session,
         odoo_contacts,
-        added,
-        deleted,
-        modified,
+        ids_to_insert,
+        ids_to_delete,
+        contacts_to_modify,
     )
-    db_session.commit()
 
 # TODO. REMOVE TEST
 sync_database_with_odoo_api()

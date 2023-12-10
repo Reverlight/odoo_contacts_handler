@@ -25,37 +25,22 @@ def get_db_session(engine):
     return db_session()
 
 
-def get_db_contacts():
-    engine = create_engine(SQLITE_DATABASE_URL)
-    db_session = get_db_session(engine)
+def get_db_contacts(db_session):
     result = db_session.query(contact_table).all()
-    db_contracts_dict = {item.id: {
+    db_contacts_dict = {item.id: {
+        **{key: getattr(item, key) for key in contact_table.columns.keys()},
         '_id': item.id,
-        'date_start': item.date_start,
-        'date_end': item.date_end,
-        'contract_type': item.contract_type,
-        'job_position': item.job_position,
-        'employee_name': item.employee_name,  # fix to other
-        'working_schedule': item.working_schedule,
     } for item in result}
-    return db_contracts_dict
+    return db_contacts_dict
 
 
-def get_db_contact(contract_id):
-    engine = create_engine(SQLITE_DATABASE_URL)
-    db_session = get_db_session(engine)
-    result = db_session.query(contact_table).filter(contact_table.c.id == contract_id).all()
-
+def get_db_contact(db_session, contract_id):
+    result = db_session.query(contact_table).filter(contact_table.c.id==contract_id).all()
     if not result:
         raise HTTPException(status_code=404, detail="Item not found")
-
-    db_contracts_dict = {item.id: {
-        '_id': item.id,
-        'date_start': item.date_start,
-        'date_end': item.date_end,
-        'contract_type': item.contract_type,
-        'job_position': item.job_position,
-        'employee_name': item.employee_name,  # fix to other
-        'working_schedule': item.working_schedule,
-    } for item in result}
-    return db_contracts_dict
+    contract = result[0]
+    db_contact_dict = {contract.id: {
+        **{key: getattr(contract, key) for key in contact_table.columns.keys()},
+        '_id': contract.id,
+    }}
+    return db_contact_dict
