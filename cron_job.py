@@ -58,16 +58,15 @@ def get_odoo_contacts() -> Dict[str, Dict[str, Any]]:
 
         models = xmlrpc.client.ServerProxy('{}/object'.format(ODOO_URL))
         ids = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'search', [[]])
+        odoo_contacts = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'read', [ids])
+        odoo_contracts = {contact['id']: {
+            **{key: contact[key] for key in contact_table.columns.keys()},
+            '_id': contact['id'],
+        } for contact in odoo_contacts}
     except Exception as ex:
         message = f'Request was failed {repr(ex)}'
         logger.error(message)
         raise ex(message)
-
-    odoo_contacts = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'read', [ids])
-    odoo_contracts = {contact['id']: {
-        **{key: contact[key] for key in contact_table.columns.keys()},
-        '_id': contact['id'],
-    } for contact in odoo_contacts}
 
     return odoo_contracts
 
