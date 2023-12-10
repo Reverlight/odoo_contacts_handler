@@ -23,18 +23,18 @@ async def run_cron_job():
     sync_database_with_odoo_api()
 
 
-@app.get('/contracts/{contract_id}')
-async def get_contact(contract_id: int) -> Dict[str, Any]:
+@app.get('/contacts/{contact_id}')
+async def get_contact(contact_id: int) -> Dict[str, Any]:
     engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
-    return {'contract': format_dict_to_list(get_db_contact(db_session, contract_id))[0]}
+    return {'contact': format_dict_to_list(get_db_contact(db_session, contact_id))[0]}
 
 
 @app.get('/')
 async def get_contacts() -> Dict[str, Any]:
     engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
-    return {'contracts': format_dict_to_list(get_db_contacts(db_session))}
+    return {'contacts': format_dict_to_list(get_db_contacts(db_session))}
 
 
 if __name__ == "__main__":

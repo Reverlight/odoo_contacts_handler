@@ -32,13 +32,13 @@ def get_db_contacts(db_session):
     return db_contacts_dict
 
 
-def get_db_contact(db_session, contract_id):
-    result = db_session.query(contact_table).filter(contact_table.c.id==contract_id).all()
+def get_db_contact(db_session, contact_id):
+    result = db_session.query(contact_table).filter(contact_table.c.id == contact_id).all()
     if not result:
         raise HTTPException(status_code=404, detail="Item not found")
-    contract = result[0]
-    db_contact_dict = {contract.id: {
-        **{key: getattr(contract, key) for key in contact_table.columns.keys()},
-        '_id': contract.id,
+    contact = result[0]
+    db_contact_dict = {contact.id: {
+        **{key: getattr(contact, key) for key in contact_table.columns.keys()},
+        '_id': contact.id,
     }}
     return db_contact_dict

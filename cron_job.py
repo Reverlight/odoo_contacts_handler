@@ -20,7 +20,7 @@ def _db_sync_contacts(
     deleted=Optional[List[int]],
     modified=Optional[List[int]],
 ):
-    # Synchronizes contracts in database by executing SQL for adding, deleting and modifying rows
+    # Synchronizes contacts in database by executing SQL for adding, deleting and modifying rows
     if added:
         stmt = (
             insert(contact_table).
@@ -59,7 +59,7 @@ def get_odoo_contacts() -> Dict[str, Dict[str, Any]]:
         models = xmlrpc.client.ServerProxy('{}/object'.format(ODOO_URL))
         ids = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'search', [[]])
         odoo_contacts = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'read', [ids])
-        odoo_contracts = {contact['id']: {
+        odoo_contacts = {contact['id']: {
             **{key: contact[key] for key in contact_table.columns.keys()},
             '_id': contact['id'],
         } for contact in odoo_contacts}
@@ -68,7 +68,7 @@ def get_odoo_contacts() -> Dict[str, Dict[str, Any]]:
         logger.error(message)
         raise ex(message)
 
-    return odoo_contracts
+    return odoo_contacts
 
 
 def compare_contacts(odoo_dict: Dict[str, Dict[str, Any]], db_dict: Dict[str, Dict[str, Any]]):
@@ -82,11 +82,11 @@ def compare_contacts(odoo_dict: Dict[str, Dict[str, Any]], db_dict: Dict[str, Di
     return ids_to_insert, ids_to_delete, contacts_to_modify
 
 
-def get_contacts_with_correct_id_key(contracts: Dict[str, Dict[str, Any]]):
+def get_contacts_with_correct_id_key(contacts: Dict[str, Dict[str, Any]]):
     # _id is used inertly in sqlalchemy
     # but in some cases we would need exactly id
     # For example in case of insert into database using id from Odoo
-    new_dict = contracts.copy()
+    new_dict = contacts.copy()
     new_dict['id'] = new_dict.pop('_id')
     return new_dict
 
