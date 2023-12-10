@@ -1,5 +1,6 @@
+from typing import Dict, Any
+
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 
 
@@ -22,14 +23,14 @@ async def run_cron_job():
 
 
 @app.get('/contracts/{contract_id}')
-async def get_contact(contract_id):
+async def get_contact(contract_id: int) -> Dict[str, Any]:
     engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
-    return {'contract': format_dict_to_list(get_db_contact(db_session, contract_id))}
+    return {'contract': format_dict_to_list(get_db_contact(db_session, contract_id))[0]}
 
 
 @app.get('/')
-async def get_contacts():
+async def get_contacts() -> Dict[str, Any]:
     engine = create_engine(SQLITE_DATABASE_URL)
     db_session = get_db_session(engine)
     return {'contracts': format_dict_to_list(get_db_contacts(db_session))}

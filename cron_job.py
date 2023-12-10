@@ -1,22 +1,20 @@
 import xmlrpc.client
+from typing import Dict, Any, Optional, List
 
 from sqlalchemy import create_engine, update, bindparam, insert, delete
+from sqlalchemy.orm import Session
 
 from config import ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, ODOO_URL
 from db_helper import contact_table, SQLITE_DATABASE_URL, get_db_session, get_db_contacts
 from helper import format_dict_to_list
 
 
-# TODO. Add logs. Add typings. Rename functions
-# TODO. Refactor to reuse fields and not repeat them (maybe through __table__.columns)
-
-
 def _db_sync_contacts(
-    db_session,
-    odoo_contacts,
-    added=None,
-    deleted=None,
-    modified=None,
+    db_session: Session,
+    odoo_contacts: Dict[str, Dict[str, Any]],
+    added=Optional[List[int]],
+    deleted=Optional[List[int]],
+    modified=Optional[List[int]],
 ):
     # Synchronizes contracts in database by executing SQL for adding, deleting and modifying rows
     if added:
@@ -49,7 +47,7 @@ def _db_sync_contacts(
     db_session.commit()
 
 
-def get_odoo_contacts():
+def get_odoo_contacts() -> Dict[str, Dict[str, Any]]:
     common = xmlrpc.client.ServerProxy('{}/common'.format(ODOO_URL))
     uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {})
 
@@ -68,7 +66,7 @@ def get_odoo_contacts():
     return odoo_contracts
 
 
-def compare_contacts(odoo_dict, db_dict):
+def compare_contacts(odoo_dict: Dict[str, Dict[str, Any]], db_dict: Dict[str, Dict[str, Any]]):
     ids_to_insert = set(odoo_dict.keys()) - set(db_dict.keys())
     ids_to_delete = set(db_dict.keys()) - set(odoo_dict.keys())
     contacts_to_modify = {
@@ -79,11 +77,11 @@ def compare_contacts(odoo_dict, db_dict):
     return ids_to_insert, ids_to_delete, contacts_to_modify
 
 
-def get_contacts_with_correct_id_key(dict_):
+def get_contacts_with_correct_id_key(contracts: Dict[str, Dict[str, Any]]):
     # _id is used inertly in sqlalchemy
     # but in some cases we would need exactly id
     # For example in case of insert into database using id from Odoo
-    new_dict = dict_.copy()
+    new_dict = contracts.copy()
     new_dict['id'] = new_dict.pop('_id')
     return new_dict
 
