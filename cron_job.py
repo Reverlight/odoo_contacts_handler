@@ -101,6 +101,3 @@ def sync_database_with_odoo_api():
         ids_to_delete,
         contacts_to_modify,
     )
-
-# TODO. REMOVE TEST
-sync_database_with_odoo_api()
