@@ -18,7 +18,8 @@ app = FastAPI()
 @app.on_event('startup')
 @repeat_every(seconds=60)
 async def run_cron_job():
-    # Note: fastapi_utilities does not support Lifespan Events, that's why fastAPI old events is used
+    # Note: fastapi_utilities does not support
+    # lifespan events, that's why fastAPI old events is used
     sync_database_with_odoo_api()
 
 

@@ -1,13 +1,13 @@
 import xmlrpc.client
 from typing import Dict, Any, Optional, List
-
-from fastapi import HTTPException
-from sqlalchemy import create_engine, update, bindparam, insert, delete
-from sqlalchemy.orm import Session
 import logging
 
-from config import ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, ODOO_URL
-from db_helper import contact_table, SQLITE_DATABASE_URL, get_db_session, get_db_contacts
+from sqlalchemy import create_engine, update, bindparam, insert, delete
+from sqlalchemy.orm import Session
+
+
+from config import ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, ODOO_URL, SQLITE_DATABASE_URL
+from db_helper import contact_table, get_db_session, get_db_contacts
 from helper import format_dict_to_list
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def get_odoo_contacts() -> Dict[str, Dict[str, Any]]:
     except Exception as ex:
         message = f'Request was failed {repr(ex)}'
         logger.error(message)
-        raise HTTPException(status_code=500, detail=message)
+        raise ex(message)
 
     odoo_contacts = models.execute_kw(ODOO_DB, uid, ODOO_PASSWORD, 'res.partner', 'read', [ids])
     odoo_contracts = {contact['id']: {

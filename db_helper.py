@@ -1,10 +1,8 @@
 from fastapi import HTTPException
-import os
 
-from sqlalchemy import create_engine, Column, Integer, String, MetaData, update, bindparam, Table, insert, delete
+from sqlalchemy import Column, Integer, String, MetaData, Table
 from sqlalchemy.orm import sessionmaker
 
-from config import SQLITE_DATABASE_URL
 
 metadata_obj = MetaData()
 contact_table = Table(

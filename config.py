@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 ODOO_URL = os.getenv('ODOO_URL')
